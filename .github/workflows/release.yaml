@@ -93,7 +93,7 @@ jobs:
 
           sudo make DESTDIR="${ROOTDIR}/zlib" install
 
-      - name: "Build: libpcap (musl)"
+      - name: "Build: libcap (musl)"
         run: |
           cd staging/libcap-${LIBCAP_MUSL_VERSION}
 
@@ -106,7 +106,7 @@ jobs:
 
           make ${MAKEOPTS} CC=musl-gcc LD=musl-gcc GOLANG=no prefix=/
           
-          sudo make DESTDIR="${ROOTDIR}/libpcap" GOLANG=no prefix=/ install
+          sudo make DESTDIR="${ROOTDIR}/libcap" GOLANG=no prefix=/ install
 
       - name: "Build: libjsonc (musl)"
         run: |
