@@ -3,6 +3,26 @@ on:
   push:
     branches:
       - "*"
+
+env:
+  ZLIB_MUSL_VERSION: 1.2.12
+  ZLIB_MUSL_CHECKSUM: 28687d676c04e7103bb6ff2b9694c471
+
+  LIBCAP_MUSL_VERSION: 2.33
+  LIBCAP_MUSL_CHECKSUM: c23bbc02b13d10c3889ef2b1bed34071
+
+  JSONC_MUSL_VERSION: 0.13.1-20180305
+  JSONC_MUSL_CHECKSUM: 20dba7bf773599a0842745a2fe5b7cd3
+
+  OPENSSL_MUSL_VERSION: 1.1.1d
+  OPENSSL_MUSL_CHECKSUM: 3be209000dbc7e1b95bcdf47980a3baa
+
+  LIBWEBSOCKETS_MUSL_VERSION: 3.2.0
+  LIBWEBSOCKETS_MUSL_CHECKSUM: 1d06f5602604e67e6f50cef9857c6b0c
+
+  MAKEOPTS: -j 12
+
+
 #on:
 #  release:
 #    types: [created]
@@ -24,33 +44,78 @@ jobs:
           mkdir staging
           cd staging
 
-          wget https://www.zlib.net/zlib-1.2.12.tar.xz
-          wget https://git.kernel.org/pub/scm/linux/kernel/git/morgan/libcap.git/snapshot/libcap-2.33.tar.gz
-          wget https://github.com/json-c/json-c/archive/json-c-0.13.1-20180305.tar.gz
-          wget https://www.openssl.org/source/openssl-1.1.1d.tar.gz
-          wget https://github.com/warmcat/libwebsockets/archive/v3.2.0.tar.gz -O libwebsockets-3.2.0.tar.gz
+          wget https://www.zlib.net/zlib-${ZLIB_MUSL_VERSION}.tar.xz
+          wget https://git.kernel.org/pub/scm/linux/kernel/git/morgan/libcap.git/snapshot/libcap-${LIBCAP_MUSL_VERSION}.tar.gz
+          wget https://github.com/json-c/json-c/archive/json-c-${JSONC_MUSL_VERSION}.tar.gz
+          wget https://www.openssl.org/source/openssl-${OPENSSL_MUSL_VERSION}.tar.gz
+          wget https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz -O libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz
 
       - name: Verify download checksums
         run: |
           cd staging
-          md5sum -c ../.github/workflows/checksums
+          echo "$ZLIB_MUSL_CHECKSUM  zlib-${ZLIB_MUSL_VERSION}.tar.xz" > checksums
+          echo "$LIBCAP_MUSL_CHECKSUM  libcap-${LIBCAP_MUSL_VERSION}.tar.gz" >> checksums
+          echo "$JSONC_MUSL_CHECKSUM  json-c-${JSONC_MUSL_VERSION}.tar.gz" >> checksums
+          echo "$OPENSSL_MUSL_CHECKSUM  openssl-${OPENSSL_MUSL_VERSION}.tar.gz" >> checksums
+          echo "$LIBWEBSOCKETS_MUSL_CHECKSUM  libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz" >> checksums
+
+          md5sum -c checksums
  
       - name: Extract static dependencies sources
         run: |
           cd staging
-          tar -xf zlib-1.2.12.tar.xz
-          tar -xf openssl-1.1.1d.tar.gz
-          tar -xf libwebsockets-3.2.0.tar.gz
-          tar -xf libcap-2.33.tar.gz
-          tar -xf json-c-0.13.1-20180305.tar.gz
+          tar -xf zlib-${ZLIB_MUSL_VERSION}.tar.xz
+          tar -xf openssl-${OPENSSL_MUSL_VERSION}.tar.gz
+          tar -xf libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz
+          tar -xf libcap-${LIBCAP_MUSL_VERSION}.tar.gz
+          tar -xf json-c-${JSONC_MUSL_VERSION}.tar.gz
 
-          ls
-
-      - name: Build production 0-db-fs
+      - name: Prepare system for musl-build
         run: |
-          make production
-          version=$(grep ZDBFS_VERSION src/zdbfs.h | awk '{ print $3 }' | sed s/'"'//g)
-          cp zdbfs zdbfs-${version}-amd64-linux-static
+          # linking linux source kernel to musl path
+          ln -fs /usr/include/linux /usr/include/x86_64-linux-musl/
+
+          # linking some specific headers
+          ln -fs /usr/include/asm-generic /usr/include/x86_64-linux-musl/
+          ln -fs /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/
+
+          # linking sys/queue not shipped by musl
+          ln -fs /usr/include/x86_64-linux-gnu/sys/queue.h /usr/include/x86_64-linux-musl/sys/      
+
+      - name: Build: zlib (musl)
+        env:
+          ROOTDIR: ~/releases/zlib
+        run: |
+          cd staging/zlib-${ZLIB_MUSL_VERSION}
+
+          CC="musl-gcc" CFLAGS="-fPIC" ./configure --prefix /
+          make ${MAKEOPTS}
+          make DESTDIR="${ROOTDIR}" install
+
+          echo $ROOTDIR
+          ls $ROOTDIR
+
+      - name: Build: libpcap (musl)
+        run: |
+          cd staging/libcap-${LIBCAP_MUSL_VERSION}
+
+      - name: Build: libjsonc (musl)
+        run: |
+          cd staging/json-c-json-c-${JSONC_MUSL_VERSION}
+
+      - name: Build: openssl (musl)
+        run: |
+          cd staging/openssl-${OPENSSL_MUSL_VERSION}
+          
+      - name: Build: libwebsockets (musl)
+        run: |
+          cd staging/libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}
+
+      - name: Build: corex (static, musl)
+        run: |
+          cd src
+
+          make
 
       - name: Upload the artifacts
         uses: skx/github-action-publish-binaries@master
