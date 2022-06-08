@@ -29,9 +29,23 @@ jobs:
           wget https://github.com/json-c/json-c/archive/json-c-0.13.1-20180305.tar.gz
           wget https://www.openssl.org/source/openssl-1.1.1d.tar.gz
           wget https://github.com/warmcat/libwebsockets/archive/v3.2.0.tar.gz -O libwebsockets-3.2.0.tar.gz
-          
-          md5sum -c ../.github/workflows/checksum
+
+      - name: Verify download checksums
+        run: |
+          cd staging
+          md5sum -c ../.github/workflows/checksums
  
+      - name: Extract static dependencies sources
+        run: |
+          cd staging
+          tar -xf zlib-1.2.12.tar.xz
+          tar -xf openssl-1.1.1d.tar.gz
+          tar -xf libwebsockets-3.2.0.tar.gz
+          tar -xf libcap-2.33.tar.gz
+          tar -xf json-c-0.13.1-20180305.tar.gz
+
+          ls
+
       - name: Build production 0-db-fs
         run: |
           make production
