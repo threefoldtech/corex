@@ -20,6 +20,7 @@ env:
   LIBWEBSOCKETS_MUSL_VERSION: 3.2.0
   LIBWEBSOCKETS_MUSL_CHECKSUM: 1d06f5602604e67e6f50cef9857c6b0c
 
+  ROOTDIR: /releases
   MAKEOPTS: -j 12
 
 
@@ -83,8 +84,6 @@ jobs:
           sudo ln -fs /usr/include/x86_64-linux-gnu/sys/queue.h /usr/include/x86_64-linux-musl/sys/      
 
       - name: "Build: zlib (musl)"
-        env:
-          ROOTDIR: ~/releases/zlib
         run: |
           cd staging/zlib-${ZLIB_MUSL_VERSION}
 
@@ -92,11 +91,9 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="$(realpath -m ${ROOTDIR})" install
+          sudo make DESTDIR="${ROOTDIR}/zlib" install
 
       - name: "Build: libpcap (musl)"
-        env:
-          ROOTDIR: ~/releases/libpcap
         run: |
           cd staging/libcap-${LIBCAP_MUSL_VERSION}
 
@@ -109,11 +106,9 @@ jobs:
 
           make ${MAKEOPTS} CC=musl-gcc LD=musl-gcc GOLANG=no prefix=/
           
-          make DESTDIR="$(realpath -m ${ROOTDIR})" GOLANG=no prefix=/ install
+          sudo make DESTDIR="${ROOTDIR}/libpcap" GOLANG=no prefix=/ install
 
       - name: "Build: libjsonc (musl)"
-        env:
-          ROOTDIR: ~/releases/libjsonc
         run: |
           cd staging/json-c-json-c-${JSONC_MUSL_VERSION}
 
@@ -121,11 +116,9 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="$(realpath -m ${ROOTDIR})" install
+          sudo make DESTDIR="${ROOTDIR}/libjsonc" install
 
       - name: "Build: openssl (musl)"
-        env:
-          ROOTDIR: ~/releases/openssl
         run: |
           cd staging/openssl-${OPENSSL_MUSL_VERSION}
 
@@ -133,11 +126,9 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="$(realpath -m ${ROOTDIR})" install_sw
+          sudo make DESTDIR="${ROOTDIR}/openssl" install_sw
           
       - name: "Build: libwebsockets (musl)"
-        env:
-          ROOTDIR: ~/releases/libwebsockets
         run: |
           cd staging/libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}
           
@@ -149,12 +140,12 @@ jobs:
               -DLWS_UNIX_SOCK=ON \
               -DLWS_WITHOUT_TESTAPPS=ON \
               -DLWS_WITH_SHARED=OFF \
-              -DOPENSSL_ROOT_DIR=$(realpath -m ${ROOTDIR})/../openssl \
+              -DOPENSSL_ROOT_DIR=/releases/openssl \
               ..
 
           make ${MAKEOPTS}
 
-          make DESTDIR="$(realpath -m ${ROOTDIR})" install
+          sudo make DESTDIR="${ROOTDIR}/libwebsockets" install
 
       - name: "Build: corex (static, musl)"
         run: |
