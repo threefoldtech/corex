@@ -1,0 +1,175 @@
+name: Build release
+on:
+  release:
+    types: [created]
+
+env:
+  ZLIB_MUSL_VERSION: 1.2.12
+  ZLIB_MUSL_CHECKSUM: 28687d676c04e7103bb6ff2b9694c471
+
+  LIBCAP_MUSL_VERSION: 2.33
+  LIBCAP_MUSL_CHECKSUM: c23bbc02b13d10c3889ef2b1bed34071
+
+  JSONC_MUSL_VERSION: 0.13.1-20180305
+  JSONC_MUSL_CHECKSUM: 20dba7bf773599a0842745a2fe5b7cd3
+
+  OPENSSL_MUSL_VERSION: 1.1.1d
+  OPENSSL_MUSL_CHECKSUM: 3be209000dbc7e1b95bcdf47980a3baa
+
+  LIBWEBSOCKETS_MUSL_VERSION: 3.2.0
+  LIBWEBSOCKETS_MUSL_CHECKSUM: 1d06f5602604e67e6f50cef9857c6b0c
+
+  ROOTDIR: /releases
+  MAKEOPTS: -j 12
+
+jobs:
+  static:
+    name: Create release artifact (static)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@master
+
+      - name: "Install: system dependencies"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential musl musl-tools curl wget cmake xxd
+
+      - name: "Download: static dependencies"
+        run: |
+          mkdir staging
+          cd staging
+
+          wget https://www.zlib.net/zlib-${ZLIB_MUSL_VERSION}.tar.xz
+          wget https://git.kernel.org/pub/scm/linux/kernel/git/morgan/libcap.git/snapshot/libcap-${LIBCAP_MUSL_VERSION}.tar.gz
+          wget https://github.com/json-c/json-c/archive/json-c-${JSONC_MUSL_VERSION}.tar.gz
+          wget https://www.openssl.org/source/openssl-${OPENSSL_MUSL_VERSION}.tar.gz
+          wget https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz -O libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz
+
+      - name: "Verify: static dependencies sources"
+        run: |
+          cd staging
+          echo "$ZLIB_MUSL_CHECKSUM  zlib-${ZLIB_MUSL_VERSION}.tar.xz" > checksums
+          echo "$LIBCAP_MUSL_CHECKSUM  libcap-${LIBCAP_MUSL_VERSION}.tar.gz" >> checksums
+          echo "$JSONC_MUSL_CHECKSUM  json-c-${JSONC_MUSL_VERSION}.tar.gz" >> checksums
+          echo "$OPENSSL_MUSL_CHECKSUM  openssl-${OPENSSL_MUSL_VERSION}.tar.gz" >> checksums
+          echo "$LIBWEBSOCKETS_MUSL_CHECKSUM  libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz" >> checksums
+
+          md5sum -c checksums
+ 
+      - name: "Extract: static dependencies archives"
+        run: |
+          cd staging
+          tar -xf zlib-${ZLIB_MUSL_VERSION}.tar.xz
+          tar -xf openssl-${OPENSSL_MUSL_VERSION}.tar.gz
+          tar -xf libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz
+          tar -xf libcap-${LIBCAP_MUSL_VERSION}.tar.gz
+          tar -xf json-c-${JSONC_MUSL_VERSION}.tar.gz
+
+      - name: "Prepare: musl-build system"
+        run: |
+          # linking linux source kernel to musl path
+          sudo ln -fs /usr/include/linux /usr/include/x86_64-linux-musl/
+
+          # linking some specific headers
+          sudo ln -fs /usr/include/asm-generic /usr/include/x86_64-linux-musl/
+          sudo ln -fs /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/
+
+          # linking sys/queue not shipped by musl
+          sudo ln -fs /usr/include/x86_64-linux-gnu/sys/queue.h /usr/include/x86_64-linux-musl/sys/      
+
+      - name: "Build: zlib (musl)"
+        run: |
+          cd staging/zlib-${ZLIB_MUSL_VERSION}
+
+          CC="musl-gcc" CFLAGS="-fPIC" ./configure --prefix /
+
+          make ${MAKEOPTS}
+
+          sudo make DESTDIR="${ROOTDIR}/zlib" install
+
+      - name: "Build: libcap (musl)"
+        run: |
+          cd staging/libcap-${LIBCAP_MUSL_VERSION}
+
+          # disable shared lib
+          sed -i 's/all: $(MINLIBNAME)/all:/' libcap/Makefile
+          sed -i '/0644 $(MINLIBNAME)/d' libcap/Makefile
+
+          # disable tests
+          sed -i '/$(MAKE) -C tests/d' Makefile
+
+          make ${MAKEOPTS} CC=musl-gcc LD=musl-gcc GOLANG=no prefix=/
+          
+          sudo make DESTDIR="${ROOTDIR}/libcap" GOLANG=no prefix=/ install
+
+      - name: "Build: libjsonc (musl)"
+        run: |
+          cd staging/json-c-json-c-${JSONC_MUSL_VERSION}
+
+          CC="musl-gcc" ./configure --disable-shared --enable-static --prefix /
+
+          make ${MAKEOPTS}
+
+          sudo make DESTDIR="${ROOTDIR}/libjsonc" install
+
+      - name: "Build: openssl (musl)"
+        run: |
+          cd staging/openssl-${OPENSSL_MUSL_VERSION}
+
+          CC="musl-gcc" ./Configure --prefix=/ linux-x86_64 no-shared
+
+          make ${MAKEOPTS}
+
+          sudo make DESTDIR="${ROOTDIR}/openssl" install_sw
+          
+      - name: "Build: libwebsockets (musl)"
+        run: |
+          cd staging/libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}
+          
+          mkdir -p build
+          cd build
+
+          CC="musl-gcc" cmake -DLWS_IPV6=ON \
+              -DCMAKE_INSTALL_PREFIX=/ \
+              -DLWS_UNIX_SOCK=ON \
+              -DLWS_WITHOUT_TESTAPPS=ON \
+              -DLWS_WITH_SHARED=OFF \
+              -DOPENSSL_ROOT_DIR=/releases/openssl \
+              ..
+
+          make ${MAKEOPTS}
+
+          sudo make DESTDIR="${ROOTDIR}/libwebsockets" install
+
+      - name: "Build: corex (static, musl)"
+        run: |
+          cd src
+
+          ZLIB_INCLUDE="-I${ROOTDIR}/zlib/include"
+          LIBWEBSOCKETS_INCLUDE="-I${ROOTDIR}/libwebsockets/include"
+          LIBJSONC_INCLUDE="-I${ROOTDIR}/libjsonc/include/json-c"
+          OPENSSL_INCLUDE="-I${ROOTDIR}/openssl/include"
+          LIBCAP_INCLUDE="-I${ROOTDIR}/libcap/include"
+
+          ZLIB_LIBS="-L${ROOTDIR}/zlib/lib"
+          LIBWEBSOCKETS_LIBS="-L${ROOTDIR}/libwebsockets/lib"
+          LIBJSONC_LIBS="-L${ROOTDIR}/libjsonc/lib"
+          OPENSSL_LIBS="-L${ROOTDIR}/openssl/lib64"
+          LIBCAP_LIBS="-L${ROOTDIR}/libcap/lib64"
+
+          export CFLAGS="$ZLIB_INCLUDE $LIBWEBSOCKETS_INCLUDE $LIBJSONC_INCLUDE $OPENSSL_INCLUDE $LIBCAP_INCLUDE"
+          export LDFLAGS="$ZLIB_LIBS $LIBWEBSOCKETS_LIBS $LIBJSONC_LIBS $OPENSSL_LIBS $LIBCAP_LIBS"
+
+          CC="musl-gcc" make ${MAKEOPTS}
+
+          version=$(grep COREX_VERSION server.h | awk '{ print $3 }' | sed s/'"'//g)
+          cp corex ../corex-${version}-amd64-linux-static
+
+      - name: "Upload: release artifact"
+        uses: skx/github-action-publish-binaries@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: 'corex-*-linux-static'
+
