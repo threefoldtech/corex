@@ -109,7 +109,7 @@ jobs:
 
           make ${MAKEOPTS} CC=musl-gcc LD=musl-gcc GOLANG=no prefix=/
           
-          make DESTDIR="$(realpath ${ROOTDIR})" GOLANG=no prefix=/ install
+          make DESTDIR="$(realpath -m ${ROOTDIR})" GOLANG=no prefix=/ install
 
       - name: "Build: libjsonc (musl)"
         env:
@@ -121,7 +121,7 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="$(realpath ${ROOTDIR})" install
+          make DESTDIR="$(realpath -m ${ROOTDIR})" install
 
       - name: "Build: openssl (musl)"
         env:
@@ -133,7 +133,7 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="$(realpath ${ROOTDIR})" install_sw
+          make DESTDIR="$(realpath -m ${ROOTDIR})" install_sw
           
       - name: "Build: libwebsockets (musl)"
         env:
@@ -149,12 +149,12 @@ jobs:
               -DLWS_UNIX_SOCK=ON \
               -DLWS_WITHOUT_TESTAPPS=ON \
               -DLWS_WITH_SHARED=OFF \
-              -DOPENSSL_ROOT_DIR=$(realpath ${ROOTDIR})/../openssl \
+              -DOPENSSL_ROOT_DIR=$(realpath -m ${ROOTDIR})/../openssl \
               ..
 
           make ${MAKEOPTS}
 
-          make DESTDIR="$(realpath ${ROOTDIR})" install
+          make DESTDIR="$(realpath -m ${ROOTDIR})" install
 
       - name: "Build: corex (static, musl)"
         run: |
