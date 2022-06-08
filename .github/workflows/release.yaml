@@ -1,8 +1,7 @@
 name: Build release
 on:
-  push:
-    branches:
-      - "*"
+  release:
+    types: [created]
 
 env:
   ZLIB_MUSL_VERSION: 1.2.12
@@ -23,10 +22,6 @@ env:
   ROOTDIR: /releases
   MAKEOPTS: -j 12
 
-
-#on:
-#  release:
-#    types: [created]
 jobs:
   static:
     name: Create release artifact (static)
