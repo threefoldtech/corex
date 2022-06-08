@@ -21,16 +21,16 @@ jobs:
 
       - name: Download static dependencies
         run: |
+          mkdir staging
+          cd staging
+
           wget https://www.zlib.net/zlib-1.2.12.tar.xz
           wget https://git.kernel.org/pub/scm/linux/kernel/git/morgan/libcap.git/snapshot/libcap-2.33.tar.gz
           wget https://github.com/json-c/json-c/archive/json-c-0.13.1-20180305.tar.gz
           wget https://www.openssl.org/source/openssl-1.1.1d.tar.gz
           wget https://github.com/warmcat/libwebsockets/archive/v3.2.0.tar.gz -O libwebsockets-3.2.0.tar.gz
-
-          pwd
-          ls -alh
-          ls -alh corex
-
+          
+          md5sum -c ../.github/workflows/checksum
  
       - name: Build production 0-db-fs
         run: |
