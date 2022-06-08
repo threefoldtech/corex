@@ -34,12 +34,12 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@master
 
-      - name: Install system dependencies
+      - name: "Install: system dependencies"
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential musl musl-tools curl wget cmake xxd
 
-      - name: Download static dependencies
+      - name: "Download: static dependencies"
         run: |
           mkdir staging
           cd staging
@@ -50,7 +50,7 @@ jobs:
           wget https://www.openssl.org/source/openssl-${OPENSSL_MUSL_VERSION}.tar.gz
           wget https://github.com/warmcat/libwebsockets/archive/v${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz -O libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}.tar.gz
 
-      - name: Verify download checksums
+      - name: "Verify: static dependencies sources"
         run: |
           cd staging
           echo "$ZLIB_MUSL_CHECKSUM  zlib-${ZLIB_MUSL_VERSION}.tar.xz" > checksums
@@ -61,7 +61,7 @@ jobs:
 
           md5sum -c checksums
  
-      - name: Extract static dependencies sources
+      - name: "Extract: static dependencies archives"
         run: |
           cd staging
           tar -xf zlib-${ZLIB_MUSL_VERSION}.tar.xz
@@ -70,7 +70,7 @@ jobs:
           tar -xf libcap-${LIBCAP_MUSL_VERSION}.tar.gz
           tar -xf json-c-${JSONC_MUSL_VERSION}.tar.gz
 
-      - name: Prepare system for musl-build
+      - name: "Prepare: musl-build system"
         run: |
           # linking linux source kernel to musl path
           sudo ln -fs /usr/include/linux /usr/include/x86_64-linux-musl/
@@ -84,7 +84,7 @@ jobs:
 
       - name: "Build: zlib (musl)"
         env:
-          ROOTDIR: ~/releases/zlib
+          ROOTDIR: $HOME/releases/zlib
         run: |
           cd staging/zlib-${ZLIB_MUSL_VERSION}
 
@@ -96,7 +96,7 @@ jobs:
 
       - name: "Build: libpcap (musl)"
         env:
-          ROOTDIR: ~/releases/libpcap
+          ROOTDIR: $HOME/releases/libpcap
         run: |
           cd staging/libcap-${LIBCAP_MUSL_VERSION}
 
@@ -113,7 +113,7 @@ jobs:
 
       - name: "Build: libjsonc (musl)"
         env:
-          ROOTDIR: ~/releases/libjsonc
+          ROOTDIR: $HOME/releases/libjsonc
         run: |
           cd staging/json-c-json-c-${JSONC_MUSL_VERSION}
 
@@ -125,7 +125,7 @@ jobs:
 
       - name: "Build: openssl (musl)"
         env:
-          ROOTDIR: ~/releases/openssl
+          ROOTDIR: $HOME/releases/openssl
         run: |
           cd staging/openssl-${OPENSSL_MUSL_VERSION}
 
@@ -137,7 +137,7 @@ jobs:
           
       - name: "Build: libwebsockets (musl)"
         env:
-          ROOTDIR: ~/releases/libwebsockets
+          ROOTDIR: $HOME/releases/libwebsockets
         run: |
           cd staging/libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}
           
@@ -163,7 +163,7 @@ jobs:
 
           make
 
-      - name: Upload the artifacts
+      - name: "Upload: release artifact"
         uses: skx/github-action-publish-binaries@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
