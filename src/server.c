@@ -892,7 +892,7 @@ int main(int argc, char **argv) {
 #endif
     }
 
-    verbose("[+] initializing corex %s (libwebsockets %s)\n", TTYD_VERSION, LWS_LIBRARY_VERSION);
+    verbose("[+] initializing corex %s (libwebsockets %s)\n", COREX_VERSION, LWS_LIBRARY_VERSION);
     verbose("[+] listening on port: %d\n", info.port);
     verbose("[+] tty configuration:\n");
 

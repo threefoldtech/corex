@@ -2,6 +2,8 @@
 #include <sys/ioctl.h>
 #include <sys/queue.h>
 
+#define COREX_VERSION   "2.1.4"
+
 // client message
 #define INPUT '0'
 #define RESIZE_TERMINAL '1'

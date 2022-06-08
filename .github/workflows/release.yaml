@@ -168,6 +168,9 @@ jobs:
 
           CC="musl-gcc" make ${MAKEOPTS}
 
+          version=$(grep COREX_VERSION server.h | awk '{ print $3 }' | sed s/'"'//g)
+          cp corex ../corex-${version}-amd64-linux-static
+
       - name: "Upload: release artifact"
         uses: skx/github-action-publish-binaries@master
         env:
