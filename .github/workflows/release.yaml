@@ -72,12 +72,19 @@ jobs:
 
       - name: Prepare system for musl-build
         run: |
+          # linking linux source kernel to musl path
           ln -fs /usr/include/linux /usr/include/x86_64-linux-musl/
+
+          # linking some specific headers
           ln -fs /usr/include/asm-generic /usr/include/x86_64-linux-musl/
           ln -fs /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/
+
+          # linking sys/queue not shipped by musl
           ln -fs /usr/include/x86_64-linux-gnu/sys/queue.h /usr/include/x86_64-linux-musl/sys/      
 
-      - name: Build: zlib (musl)
+      - name: "Build: zlib (musl)"
+        env:
+          ROOTDIR: ~/releases/zlib
         run: |
           cd staging/zlib-${ZLIB_MUSL_VERSION}
 
@@ -85,26 +92,23 @@ jobs:
           make ${MAKEOPTS}
           make DESTDIR="${ROOTDIR}" install
 
-          echo $ROOTDIR
-          ls $ROOTDIR
-
-      - name: Build: libpcap (musl)
+      - name: "Build: libpcap (musl)"
         run: |
           cd staging/libcap-${LIBCAP_MUSL_VERSION}
 
-      - name: Build: libjsonc (musl)
+      - name: "Build: libjsonc (musl)"
         run: |
           cd staging/json-c-json-c-${JSONC_MUSL_VERSION}
 
-      - name: Build: openssl (musl)
+      - name: "Build: openssl (musl)"
         run: |
           cd staging/openssl-${OPENSSL_MUSL_VERSION}
           
-      - name: Build: libwebsockets (musl)
+      - name: "Build: libwebsockets (musl)"
         run: |
           cd staging/libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}
 
-      - name: Build: corex (static, musl)
+      - name: "Build: corex (static, musl)"
         run: |
           cd src
 
