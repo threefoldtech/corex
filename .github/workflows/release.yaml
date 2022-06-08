@@ -89,28 +89,77 @@ jobs:
           cd staging/zlib-${ZLIB_MUSL_VERSION}
 
           CC="musl-gcc" CFLAGS="-fPIC" ./configure --prefix /
+
           make ${MAKEOPTS}
+
           make DESTDIR="${ROOTDIR}" install
 
       - name: "Build: libpcap (musl)"
+        env:
+          ROOTDIR: ~/releases/libpcap
         run: |
           cd staging/libcap-${LIBCAP_MUSL_VERSION}
 
+          # disable shared lib
+          sed -i 's/all: $(MINLIBNAME)/all:/' libcap/Makefile
+          sed -i '/0644 $(MINLIBNAME)/d' libcap/Makefile
+
+          # disable tests
+          sed -i '/$(MAKE) -C tests/d' Makefile
+
+          make ${MAKEOPTS} CC=musl-gcc LD=musl-gcc GOLANG=no prefix=/
+          
+          make DESTDIR="${ROOTDIR}" GOLANG=no prefix=/ install
+
       - name: "Build: libjsonc (musl)"
+        env:
+          ROOTDIR: ~/releases/libjsonc
         run: |
           cd staging/json-c-json-c-${JSONC_MUSL_VERSION}
 
+          CC="musl-gcc" ./configure --disable-shared --enable-static --prefix /
+
+          make ${MAKEOPTS}
+
+          make DESTDIR="${ROOTDIR}" install
+
       - name: "Build: openssl (musl)"
+        env:
+          ROOTDIR: ~/releases/openssl
         run: |
           cd staging/openssl-${OPENSSL_MUSL_VERSION}
+
+          CC="musl-gcc" ./Configure --prefix=/ linux-x86_64 no-shared
+
+          make ${MAKEOPTS}
+
+          make DESTDIR="${ROOTDIR}" install_sw
           
       - name: "Build: libwebsockets (musl)"
+        env:
+          ROOTDIR: ~/releases/libwebsockets
         run: |
           cd staging/libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}
+          
+          mkdir -p build
+          cd build
+
+          CC="musl-gcc" cmake -DLWS_IPV6=ON \
+              -DCMAKE_INSTALL_PREFIX=/ \
+              -DLWS_UNIX_SOCK=ON \
+              -DLWS_WITHOUT_TESTAPPS=ON \
+              -DLWS_WITH_SHARED=OFF \
+              -DOPENSSL_ROOT_DIR=${ROOTDIR}/../openssl \
+              ..
+
+          make ${MAKEOPTS}
+
+          make DESTDIR="${ROOTDIR}" install
 
       - name: "Build: corex (static, musl)"
         run: |
           cd src
+          crash
 
           make
 
