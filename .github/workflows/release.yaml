@@ -84,7 +84,7 @@ jobs:
 
       - name: "Build: zlib (musl)"
         env:
-          ROOTDIR: $HOME/releases/zlib
+          ROOTDIR: ~/releases/zlib
         run: |
           cd staging/zlib-${ZLIB_MUSL_VERSION}
 
@@ -92,11 +92,11 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="${ROOTDIR}" install
+          make DESTDIR="$(realpath ${ROOTDIR})" install
 
       - name: "Build: libpcap (musl)"
         env:
-          ROOTDIR: $HOME/releases/libpcap
+          ROOTDIR: ~/releases/libpcap
         run: |
           cd staging/libcap-${LIBCAP_MUSL_VERSION}
 
@@ -109,11 +109,11 @@ jobs:
 
           make ${MAKEOPTS} CC=musl-gcc LD=musl-gcc GOLANG=no prefix=/
           
-          make DESTDIR="${ROOTDIR}" GOLANG=no prefix=/ install
+          make DESTDIR="$(realpath ${ROOTDIR})" GOLANG=no prefix=/ install
 
       - name: "Build: libjsonc (musl)"
         env:
-          ROOTDIR: $HOME/releases/libjsonc
+          ROOTDIR: ~/releases/libjsonc
         run: |
           cd staging/json-c-json-c-${JSONC_MUSL_VERSION}
 
@@ -121,11 +121,11 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="${ROOTDIR}" install
+          make DESTDIR="$(realpath ${ROOTDIR})" install
 
       - name: "Build: openssl (musl)"
         env:
-          ROOTDIR: $HOME/releases/openssl
+          ROOTDIR: ~/releases/openssl
         run: |
           cd staging/openssl-${OPENSSL_MUSL_VERSION}
 
@@ -133,11 +133,11 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="${ROOTDIR}" install_sw
+          make DESTDIR="$(realpath ${ROOTDIR})" install_sw
           
       - name: "Build: libwebsockets (musl)"
         env:
-          ROOTDIR: $HOME/releases/libwebsockets
+          ROOTDIR: ~/releases/libwebsockets
         run: |
           cd staging/libwebsockets-${LIBWEBSOCKETS_MUSL_VERSION}
           
@@ -149,12 +149,12 @@ jobs:
               -DLWS_UNIX_SOCK=ON \
               -DLWS_WITHOUT_TESTAPPS=ON \
               -DLWS_WITH_SHARED=OFF \
-              -DOPENSSL_ROOT_DIR=${ROOTDIR}/../openssl \
+              -DOPENSSL_ROOT_DIR=$(realpath ${ROOTDIR})/../openssl \
               ..
 
           make ${MAKEOPTS}
 
-          make DESTDIR="${ROOTDIR}" install
+          make DESTDIR="$(realpath ${ROOTDIR})" install
 
       - name: "Build: corex (static, musl)"
         run: |
