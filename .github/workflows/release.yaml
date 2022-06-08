@@ -92,7 +92,7 @@ jobs:
 
           make ${MAKEOPTS}
 
-          make DESTDIR="$(realpath ${ROOTDIR})" install
+          make DESTDIR="$(realpath -m ${ROOTDIR})" install
 
       - name: "Build: libpcap (musl)"
         env:
