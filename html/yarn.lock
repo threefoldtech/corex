@@ -9018,9 +9018,9 @@ yeoman-generator@^2.0.4:
     through2 "^2.0.0"
     yeoman-environment "^2.0.5"
 
-zmodem.js@^0.1.7:
-  version "0.1.7"
-  resolved "http://registry.npm.taobao.org/zmodem.js/download/zmodem.js-0.1.7.tgz#247affb76d2b1e3042b3fc8b4a087b9d5db8d1ed"
-  integrity sha1-JHr/t20rHjBCs/yLSgh7nV240e0=
+zmodem.js@^0.1.10:
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/zmodem.js/-/zmodem.js-0.1.10.tgz#848ae071ea0f2706e3decd24ec66fc009ed19c47"
+  integrity sha512-Z1DWngunZ/j3BmIzSJpFZVNV73iHkj89rxXX4IciJdU9ga3nZ7rJ5LkfjV/QDsKhc7bazDWTTJCLJ+iRXD82dw==
   dependencies:
     crc-32 "^1.1.1"
